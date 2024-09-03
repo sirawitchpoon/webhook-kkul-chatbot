@@ -2,6 +2,11 @@ services:
   - type: web
     name: dialogflow-webhook
     env: node
-    plan: free
-    buildCommand: "npm install"
-    startCommand: "npm start"
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+    autoDeploy: true
