@@ -1,17 +1,17 @@
 {
     "name": "dialogflow-webhook",
     "version": "1.0.0",
-    "description": "Webhook for Dialogflow fulfillment",
-    "main": "server.js",
+    "description": "Webhook for Dialogflow",
+    "main": "src/index.js",
     "scripts": {
-        "start": "node server.js"
+      "start": "node src/index.js"
     },
     "dependencies": {
-        "axios": "^0.21.4",
-        "dialogflow-fulfillment": "^0.6.1",
-        "express": "^4.19.2"
+      "axios": "^1.4.0",
+      "dialogflow-fulfillment": "^0.6.1"
     },
     "engines": {
-        "node": "14.x"
+      "node": "14.x"
     }
-}
+  }
+  
