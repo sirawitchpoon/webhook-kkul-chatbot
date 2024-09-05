@@ -7,9 +7,9 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// ฟังก์ชันสำหรับสุ่มตัวละครจาก API
+// ฟังก์ชันสำหรับสุ่มตัวละครจาก API พร้อมการตั้งค่า timeout
 function randomCharacterBA(agent) {
-    return axios.get('https://api-blue-archive.vercel.app/api/characters')
+    return axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 }) // ตั้งค่า timeout 3 วินาที
     .then((response) => {
       const characters = response.data.data;
       const randomChar = characters[Math.floor(Math.random() * characters.length)];
@@ -21,6 +21,7 @@ function randomCharacterBA(agent) {
       agent.add('ขออภัย ฉันไม่สามารถสุ่มตัวละครได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง');
     });
 }
+
 
 // ข้อมูลตัวอย่าง (ในสถานการณ์จริง คุณอาจจะดึงข้อมูลนี้จากฐานข้อมูล)
 const characterData = [
