@@ -1,88 +1,67 @@
-'use strict';
-
 const express = require('express');
 const bodyParser = require('body-parser');
-const {WebhookClient} = require('dialogflow-fulfillment');
-const {Card, Suggestion} = require('dialogflow-fulfillment');
-const axios = require('axios');
 
 const app = express();
 app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-  res.send('Webhook is running!');
-});
+// ข้อมูลตัวอย่าง (ในสถานการณ์จริง คุณอาจจะดึงข้อมูลนี้จากฐานข้อมูล)
+const characterData = [
+  {
+    "_id": "634105cf07843834fd29f022",
+    "name": "Asuna",
+    "school": "Millennium",
+    "birthday": "March 24",
+    "photoUrl": "https://static.miraheze.org/bluearchivewiki/thumb/9/9f/Asuna.png/266px-Asuna.png",
+    "image": "",
+    "imageSchool": "https://static.miraheze.org/bluearchivewiki/thumb/2/2a/Millennium.png/50px-Millennium.png",
+    "damageType": "Mystic"
+},
+];
 
-app.post('/webhook', (request, response) => {
-  const agent = new WebhookClient({ request, response });
-  console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
-  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+app.post('/webhook', (req, res) => {
+  const intent = req.body.queryResult.intent.displayName;
 
-  function welcome(agent) {
-    agent.add(`Welcome to my agent!`);
-  }
+  if (intent === 'GetCharacterInfo') {
+    const characterName = req.body.queryResult.parameters.character_name;
+    const character = characterData.find(char => char.name.toLowerCase() === characterName.toLowerCase());
 
-  function fallback(agent) {
-    agent.add(`I didn't understand`);
-    agent.add(`I'm sorry, can you try again?`);
-  }
-  
-  function borrowCost(agent) {
-    let bperiod = agent.parameters.bperiod;
-    let bcost = ((bperiod * 10) / 7).toFixed(2);
-    
-    agent.add("คุณมีค่าใช้จ่ายทั้งสิ้น " + bcost + " บาท");
-  }
-
-  function catfactAPI(agent) {
-    return axios.get('https://cat-fact.herokuapp.com/facts')
-    .then((response) => {
-      const facts = response.data;
-      const randomFact = facts[Math.floor(Math.random() * facts.length)];
-      
-      agent.add(`นี่คือข้อเท็จจริงเกี่ยวกับแมว: ${randomFact.text}`);
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-      agent.add('ขออภัย ฉันไม่สามารถดึงข้อมูลเกี่ยวกับแมวได้ในขณะนี้');
+    if (character) {
+      const response = {
+        fulfillmentText: `ข้อมูลของ ${character.name}:
+        โรงเรียน: ${character.school}
+        วันเกิด: ${character.birthday}
+        ประเภทความเสียหาย: ${character.damageType}`,
+        fulfillmentMessages: [
+          {
+            card: {
+              title: character.name,
+              subtitle: `${character.school} | ${character.damageType}`,
+              imageUri: character.image,
+              buttons: [
+                {
+                  text: "ดูรูปภาพเพิ่มเติม",
+                  postback: character.photoUrl
+                }
+              ]
+            }
+          }
+        ]
+      };
+      res.json(response);
+    } else {
+      res.json({
+        fulfillmentText: `ขออภัย ไม่พบข้อมูลของตัวละคร ${characterName}`
+      });
+    }
+  } else {
+    res.json({
+      fulfillmentText: 'ขออภัย ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้ง'
     });
   }
-  
-  function randomCharacterBA(agent) {
-    return axios.get('https://api-blue-archive.vercel.app/api/characters')
-    .then((response) => {
-      const characters = response.data.data;
-      const randomChar = characters[Math.floor(Math.random() * characters.length)];
-      
-      agent.add(`นักเรียนที่น่ารักในวันนี้ของคุณคือ: ${randomChar.name} จากโรงเรียน ${randomChar.school} วันเกิดคือ ${randomChar.birthday}`);
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-
-      if (error.response) {
-        // API ตอบกลับด้วยสถานะที่ไม่ใช่ 2xx
-        agent.add('ขออภัย ฉันไม่สามารถสุ่มตัวละครได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง');
-      } else if (error.request) {
-        // ไม่มีการตอบกลับจาก API
-        agent.add('ขออภัย ไม่สามารถเชื่อมต่อกับ API ได้ กรุณาตรวจสอบ URL หรืออินเทอร์เน็ตของคุณ');
-      } else {
-        // เกิดข้อผิดพลาดอื่นๆ
-        agent.add('ขออภัย เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง');
-      }
-    });
-  }
-
-  let intentMap = new Map();
-  intentMap.set('Default Welcome Intent', welcome);
-  intentMap.set('Default Fallback Intent', fallback);
-  intentMap.set('BCost - custom - yes', borrowCost);
-  intentMap.set('cat-fact API', catfactAPI);
-  intentMap.set('Random Character BA', randomCharacterBA);
-  agent.handleRequest(intentMap);
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Webhook server is running on port ${PORT}`);
 });
