@@ -11,6 +11,10 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
+app.get('/', (req, res) => {
+  res.send('Webhook is running!');
+});
+
 app.post('/webhook', (request, response) => {
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
