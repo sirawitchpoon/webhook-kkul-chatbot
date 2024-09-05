@@ -1,50 +1,14 @@
-'use strict';
- 
-const functions = require('firebase-functions');
-const {WebhookClient} = require('dialogflow-fulfillment');
-const {Card, Suggestion} = require('dialogflow-fulfillment');
-const axios = require('axios');
+const express = require('express');
+const bodyParser = require('body-parser');
+const axios = require('axios'); // เพิ่ม axios
 
-process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
- 
-exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
-  const agent = new WebhookClient({ request, response });
-  console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
-  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
- 
-  function welcome(agent) {
-    agent.add(`Welcome to my agent!`);
-  }
- 
-  function fallback(agent) {
-    agent.add(`I didn't understand`);
-    agent.add(`I'm sorry, can you try again?`);
-  }
-  
-  function borrowCost(agent) {
-    let bperiod = agent.parameters.bperiod;
-    let bcost = ((bperiod * 10) / 7).toFixed(2);
-    
-    agent.add("คุณมีค่าใช้จ่ายทั้งสิ้น " + bcost + " บาท");
-  }
+const app = express();
+app.use(bodyParser.json());
 
-  function catfactAPI(agent) {
-    return axios.get('https://cat-fact.herokuapp.com/facts')
-    .then((response) => {
-      // เลือกข้อเท็จจริงแบบสุ่ม
-      const facts = response.data;
-      const randomFact = facts[Math.floor(Math.random() * facts.length)];
-      
-      // ส่งข้อเท็จจริงกลับไปยัง Dialogflow
-      agent.add(`นี่คือข้อเท็จจริงเกี่ยวกับแมว: ${randomFact.text}`);
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-      agent.add('ขออภัย ฉันไม่สามารถดึงข้อมูลเกี่ยวกับแมวได้ในขณะนี้');
-    });
-  }
-  
-  function randomCharacterBA(agent) {
+const PORT = process.env.PORT || 3000;
+
+// ฟังก์ชันสำหรับสุ่มตัวละครจาก API
+function randomCharacterBA(agent) {
     return axios.get('https://api-blue-archive.vercel.app/api/characters')
     .then((response) => {
       const characters = response.data.data;
@@ -56,15 +20,83 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
       console.error('Error:', error);
       agent.add('ขออภัย ฉันไม่สามารถสุ่มตัวละครได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง');
     });
+}
+
+// ข้อมูลตัวอย่าง (ในสถานการณ์จริง คุณอาจจะดึงข้อมูลนี้จากฐานข้อมูล)
+const characterData = [
+    {
+      "_id": "634105cf07843834fd29f022",
+      "name": "Asuna",
+      "school": "Millennium",
+      "birthday": "March 24",
+      "photoUrl": "https://static.miraheze.org/bluearchivewiki/thumb/9/9f/Asuna.png/266px-Asuna.png",
+      "image": "",
+      "imageSchool": "https://static.miraheze.org/bluearchivewiki/thumb/2/2a/Millennium.png/50px-Millennium.png",
+      "damageType": "Mystic"
+  },
+  ];
+
+app.post('/webhook', (req, res) => {
+  const intent = req.body.queryResult.intent.displayName;
+
+  switch(intent) {
+    case 'Default Welcome Intent':
+      return res.json({
+        fulfillmentText: 'Welcome to my agent!'
+      });
+
+    case 'Default Fallback Intent':
+      return res.json({
+        fulfillmentText: "I didn't understand. I'm sorry, can you try again?"
+      });
+
+    case 'GetCharacterInfo':
+      const characterName = req.body.queryResult.parameters.character_name;
+      const character = characterData.find(char => char.name.toLowerCase() === characterName.toLowerCase());
+
+      if (character) {
+        return res.json({
+          fulfillmentText: `ข้อมูลของ ${character.name}:
+          โรงเรียน: ${character.school}
+          วันเกิด: ${character.birthday}
+          ประเภทความเสียหาย: ${character.damageType}`,
+          fulfillmentMessages: [
+            {
+              card: {
+                title: character.name,
+                subtitle: `${character.school} | ${character.damageType}`,
+                imageUri: character.image,
+                buttons: [
+                  {
+                    text: "ดูรูปภาพเพิ่มเติม",
+                    postback: character.photoUrl
+                  }
+                ]
+              }
+            }
+          ]
+        });
+      } else {
+        return res.json({
+          fulfillmentText: `ขออภัย ไม่พบข้อมูลของตัวละคร ${characterName}`
+        });
+      }
+
+    case 'GetRandomCharacterBAIntent': // Intent สำหรับเรียกฟังก์ชัน randomCharacterBA
+      randomCharacterBA({
+        add: (message) => res.json({
+          fulfillmentText: message
+        })
+      });
+      break;
+
+    default:
+      return res.json({
+        fulfillmentText: 'ขออภัย ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้ง'
+      });
   }
+});
 
-
-  let intentMap = new Map();
-  intentMap.set('Default Welcome Intent', welcome);
-  intentMap.set('Default Fallback Intent', fallback);
-  intentMap.set('BCost - custom - yes', borrowCost);
-  intentMap.set('cat-fact API', catfactAPI);
-  intentMap.set('Random Character BA', randomCharacterBA);
-
-  agent.handleRequest(intentMap);
+app.listen(PORT, () => {
+  console.log(`Webhook server is running on port ${PORT}`);
 });

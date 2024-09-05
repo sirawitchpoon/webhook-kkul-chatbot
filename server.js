@@ -23,6 +23,10 @@ const characterData = [
 app.post('/webhook', (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
 
+  if (intent === 'borrowCost') {
+    
+  }
+
   if (intent === 'GetCharacterInfo') {
     const characterName = req.body.queryResult.parameters.character_name;
     const character = characterData.find(char => char.name.toLowerCase() === characterName.toLowerCase());
