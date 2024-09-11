@@ -24,13 +24,13 @@ function randomCharacterBA(agent) {
 
 // ฟังก์ชันเพื่อเรียกใช้ Huggingface Inference API
 function callLLMModel(agent, userQuery) {
-  const API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct'; // ใส่โมเดลที่ต้องการใช้
+  const API_URL = 'https://api-inference.huggingface.co/models/AIAT/Llama-3-Typhoon-1.5-8B';
   const headers = {
-      'Authorization': `Bearer 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` // ใส่ Huggingface token
+      'Authorization': 'Bearer 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' // แทนที่ด้วย Huggingface token ของคุณ
   };
 
   const data = {
-      inputs: userQuery
+      inputs: `<human>: ${userQuery}\n<bot>:` // รูปแบบ prompt สำหรับ Llama-3-Typhoon
   };
 
   // Log the request data to the console
@@ -38,7 +38,7 @@ function callLLMModel(agent, userQuery) {
 
   return axios.post(API_URL, data, { headers })
       .then((response) => {
-          const modelReply = response.data.generated_text || "ขอโทษ ฉันไม่สามารถให้คำตอบได้ในขณะนี้";
+          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1].trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ในขณะนี้";
 
           // Log the model's reply to the console
           console.log('Model reply:', modelReply);
@@ -47,7 +47,7 @@ function callLLMModel(agent, userQuery) {
       })
       .catch((error) => {
           console.error('Error:', error);
-          agent.add('ขอโทษ เกิดข้อผิดพลาดในการเรียกโมเดล กรุณาลองใหม่อีกครั้ง');
+          agent.add('ขออภัย เกิดข้อผิดพลาดในการเรียกใช้โมเดล กรุณาลองใหม่อีกครั้ง');
       });
 }
 
