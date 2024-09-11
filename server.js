@@ -7,8 +7,32 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// เพิ่ม OpenAI API key (ควรใช้ environment variable ในการผลิตจริง)
-const OPENAI_API_KEY = 'your-openai-api-key-here';
+// เพิ่ม Anthropic API key (ควรใช้ environment variable ในการผลิตจริง)
+const ANTHROPIC_API_KEY = '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';
+
+async function callLLMModel(agent, userQuery) {
+  try {
+    const response = await axios.post('https://api.anthropic.com/v1/chat/completions', {
+      model: "claude-3-opus-20240229",  // หรือโมเดลอื่นที่คุณต้องการใช้
+      max_tokens: 1000,
+      messages: [
+        {role: "user", content: userQuery}
+      ]
+    }, {
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const answer = response.data.content[0].text;
+    agent.add(answer);
+  } catch (error) {
+    console.error('Error calling Anthropic LLM:', error);
+    agent.add('ขออภัย เกิดข้อผิดพลาดในการประมวลผลคำถามของคุณ กรุณาลองใหม่อีกครั้ง');
+  }
+}
 
 // ฟังก์ชันสำหรับสุ่มตัวละครจาก API พร้อมการตั้งค่า timeout
 function randomCharacterBA(agent) {
@@ -24,30 +48,6 @@ function randomCharacterBA(agent) {
       agent.add('ขออภัย ฉันไม่สามารถสุ่มตัวละครได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง');
     });
 }
-
-async function callLLMModel(agent, userQuery) {
-  try {
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: "gpt-3.5-turbo",  // หรือโมเดลอื่นที่คุณต้องการใช้
-      messages: [
-        {role: "system", content: "You are a helpful assistant."},
-        {role: "user", content: userQuery}
-      ]
-    }, {
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const answer = response.data.choices[0].message.content;
-    agent.add(answer);
-  } catch (error) {
-    console.error('Error calling LLM:', error);
-    agent.add('ขออภัย เกิดข้อผิดพลาดในการประมวลผลคำถามของคุณ กรุณาลองใหม่อีกครั้ง');
-  }
-}
-
 
 app.post('/webhook', (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
