@@ -7,6 +7,9 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
+// เพิ่ม OpenAI API key (ควรใช้ environment variable ในการผลิตจริง)
+const OPENAI_API_KEY = 'your-openai-api-key-here';
+
 // ฟังก์ชันสำหรับสุ่มตัวละครจาก API พร้อมการตั้งค่า timeout
 function randomCharacterBA(agent) {
     return axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 }) // ตั้งค่า timeout 3 วินาที
@@ -22,33 +25,29 @@ function randomCharacterBA(agent) {
     });
 }
 
-function callLLMModel(agent, userQuery) {
-  const API_URL = 'https://api-inference.huggingface.co/models/scb10x/llama-3-typhoon-v1.5-8b';
-  const token = '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'; // แทนที่ด้วย token ของคุณ
-  const headers = {
-    'Authorization': `Bearer ${token}`
-  };
+async function callLLMModel(agent, userQuery) {
+  try {
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: "gpt-3.5-turbo",  // หรือโมเดลอื่นที่คุณต้องการใช้
+      messages: [
+        {role: "system", content: "You are a helpful assistant."},
+        {role: "user", content: userQuery}
+      ]
+    }, {
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-  const data = {
-      inputs: `<human>: ${userQuery}\n<bot>:`
-  };
-
-  console.log('Calling LLM with query:', userQuery);
-
-  return axios.post(API_URL, data, { headers })
-      .then((response) => {
-          if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-              throw new Error('Unexpected response format from Hugging Face API');
-          }
-          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1]?.trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ในขณะนี้";
-          console.log('Model reply:', modelReply);
-          agent.add(modelReply);
-      })
-      .catch((error) => {
-          console.error('Error details:', error.response?.data || error.message);
-          agent.add('ขออภัย เกิดข้อผิดพลาดในการเรียกใช้โมเดล กรุณาลองใหม่อีกครั้ง');
-      });
+    const answer = response.data.choices[0].message.content;
+    agent.add(answer);
+  } catch (error) {
+    console.error('Error calling LLM:', error);
+    agent.add('ขออภัย เกิดข้อผิดพลาดในการประมวลผลคำถามของคุณ กรุณาลองใหม่อีกครั้ง');
+  }
 }
+
 
 app.post('/webhook', (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
