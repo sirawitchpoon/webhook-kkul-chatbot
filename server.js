@@ -60,21 +60,24 @@ app.post('/webhook', (req, res) => {
       });
 
     case 'Default Fallback Intent':
-      try {
-        callLLMModel({
-            add: (message) => {
-                console.log('Response to user:', message);
-                res.json({
-                    fulfillmentText: message
-                });
-            }
-        }, userQuery);
-      } catch (error) {
-        console.error('Error in Default Fallback Intent:', error);
-        res.status(500).json({
-            fulfillmentText: 'ขออภัย เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่อีกครั้ง'
-        });
-      }
+      return res.json({
+        fulfillmentText: "I didn't understand. I'm sorry, can you try again?"
+      });
+
+    case 'AskLLMIntent': // Intent หลักที่ผู้ใช้จะพิมพ์ "LLM" ก่อน
+      return res.json({
+        fulfillmentText: 'คุณต้องการถามอะไรกับ LLM กรุณาพิมพ์คำถามของคุณ'
+      });
+
+    case 'AskLLMIntent - custom': // Follow-up Intent ที่จะรับคำถามจากผู้ใช้
+      callLLMModel({
+        add: (message) => {
+          console.log('Response to user:', message);
+          res.json({
+            fulfillmentText: message
+          });
+        }
+      }, userQuery); // ใช้ข้อความที่ผู้ใช้ถาม
       break;
 
     case 'GetRandomCharacterBAIntent': // Intent สำหรับเรียกฟังก์ชัน randomCharacterBA
