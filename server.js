@@ -22,31 +22,29 @@ function randomCharacterBA(agent) {
     });
 }
 
-// ฟังก์ชันเพื่อเรียกใช้ Huggingface Inference API
 function callLLMModel(agent, userQuery) {
   const API_URL = 'https://api-inference.huggingface.co/models/AIAT/Llama-3-Typhoon-1.5-8B';
   const headers = {
-      'Authorization': 'Bearer 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' // แทนที่ด้วย Huggingface token ของคุณ
+    'Authorization': 'Bearer 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' // แทนที่ด้วย Huggingface token ของคุณ
   };
 
   const data = {
-      inputs: `<human>: ${userQuery}\n<bot>:` // รูปแบบ prompt สำหรับ Llama-3-Typhoon
+      inputs: `<human>: ${userQuery}\n<bot>:`
   };
 
-  // Log the request data to the console
   console.log('Calling LLM with query:', userQuery);
 
   return axios.post(API_URL, data, { headers })
       .then((response) => {
-          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1].trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ในขณะนี้";
-
-          // Log the model's reply to the console
+          if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+              throw new Error('Unexpected response format from Hugging Face API');
+          }
+          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1]?.trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ในขณะนี้";
           console.log('Model reply:', modelReply);
-
           agent.add(modelReply);
       })
       .catch((error) => {
-          console.error('Error:', error);
+          console.error('Error details:', error.response?.data || error.message);
           agent.add('ขออภัย เกิดข้อผิดพลาดในการเรียกใช้โมเดล กรุณาลองใหม่อีกครั้ง');
       });
 }
@@ -75,16 +73,22 @@ app.post('/webhook', (req, res) => {
         fulfillmentText: 'Welcome to my agent!'
       });
 
-      case 'Default Fallback Intent':
-      callLLMModel({
-        add: (message) => {
-          // Log the response before sending it back
-          console.log('Response to user:', message);
-          res.json({
-            fulfillmentText: message
-          });
-        }
-      }, userQuery);
+    case 'Default Fallback Intent':
+      try {
+        callLLMModel({
+            add: (message) => {
+                console.log('Response to user:', message);
+                res.json({
+                    fulfillmentText: message
+                });
+            }
+        }, userQuery);
+      } catch (error) {
+        console.error('Error in Default Fallback Intent:', error);
+        res.status(500).json({
+            fulfillmentText: 'ขออภัย เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่อีกครั้ง'
+        });
+      }
       break;
 
     // case 'GetCharacterInfo':
