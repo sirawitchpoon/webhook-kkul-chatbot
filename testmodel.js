@@ -1,41 +1,28 @@
-const axios = require('axios');
-
-const testHuggingFaceAPI = async () => {
-  const API_URL = 'https://api-inference.huggingface.co/models/scb10x/llama-3-typhoon-v1.5-8b';
-  const token = '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'; // แทนที่ด้วย token ของคุณ
-  const headers = {
-    'Authorization': `Bearer ${token}`
-  };
-
+async function callLLMModel(agent, userQuery) {
   try {
-    console.log('Sending request to Hugging Face API...');
-    console.log('API URL:', API_URL);
-    console.log('Headers:', JSON.stringify(headers, null, 2));
+    const response = await axios.post('https://api.anthropic.com/v1/chat/completions', {
+      model: "claude-3-opus-20240229",  // หรือโมเดลอื่นที่คุณต้องการใช้
+      max_tokens: 1000,
+      messages: [
+        {role: "user", content: userQuery}
+      ]
+    }, {
+      headers: {
+        'x-api-key': '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',
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json'
+      }
+    });
 
-    const response = await axios.post(API_URL, {
-      inputs: '<human>: สวัสดี\n<bot>:'
-    }, { headers });
-
-    console.log('Hugging Face API response:', response.data);
+    const answer = response.data.content[0].text;
+    agent.add(answer);
   } catch (error) {
-    console.error('Error occurred:');
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-      console.error('Response headers:', error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response received:', error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Error message:', error.message);
-    }
+    console.error('Error calling Anthropic LLM:', error);
+    agent.add('ขออภัย เกิดข้อผิดพลาดในการประมวลผลคำถามของคุณ กรุณาลองใหม่อีกครั้ง');
   }
-};
+}
 
-testHuggingFaceAPI();
+callLLMModel()
 
 // ข้อมูลตัวอย่าง (ในสถานการณ์จริง คุณอาจจะดึงข้อมูลนี้จากฐานข้อมูล)
 // const characterData = [
