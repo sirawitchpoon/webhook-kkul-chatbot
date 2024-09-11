@@ -23,9 +23,10 @@ function randomCharacterBA(agent) {
 }
 
 function callLLMModel(agent, userQuery) {
-  const API_URL = 'https://api-inference.huggingface.co/models/AIAT/Llama-3-Typhoon-1.5-8B';
+  const API_URL = 'https://api-inference.huggingface.co/models/scb10x/llama-3-typhoon-v1.5-8b';
+  const token = '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'; // แทนที่ด้วย token ของคุณ
   const headers = {
-    'Authorization': 'Bearer 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' // แทนที่ด้วย Huggingface token ของคุณ
+    'Authorization': `Bearer ${token}`
   };
 
   const data = {
@@ -48,21 +49,6 @@ function callLLMModel(agent, userQuery) {
           agent.add('ขออภัย เกิดข้อผิดพลาดในการเรียกใช้โมเดล กรุณาลองใหม่อีกครั้ง');
       });
 }
-
-
-// ข้อมูลตัวอย่าง (ในสถานการณ์จริง คุณอาจจะดึงข้อมูลนี้จากฐานข้อมูล)
-// const characterData = [
-//     {
-//       "_id": "634105cf07843834fd29f022",
-//       "name": "Asuna",
-//       "school": "Millennium",
-//       "birthday": "March 24",
-//       "photoUrl": "https://static.miraheze.org/bluearchivewiki/thumb/9/9f/Asuna.png/266px-Asuna.png",
-//       "image": "",
-//       "imageSchool": "https://static.miraheze.org/bluearchivewiki/thumb/2/2a/Millennium.png/50px-Millennium.png",
-//       "damageType": "Mystic"
-//   },
-//   ];
 
 app.post('/webhook', (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
@@ -90,38 +76,6 @@ app.post('/webhook', (req, res) => {
         });
       }
       break;
-
-    // case 'GetCharacterInfo':
-    //   const characterName = req.body.queryResult.parameters.character_name;
-    //   const character = characterData.find(char => char.name.toLowerCase() === characterName.toLowerCase());
-
-    //   if (character) {
-    //     return res.json({
-    //       fulfillmentText: `ข้อมูลของ ${character.name}:
-    //       โรงเรียน: ${character.school}
-    //       วันเกิด: ${character.birthday}
-    //       ประเภทความเสียหาย: ${character.damageType}`,
-    //       fulfillmentMessages: [
-    //         {
-    //           card: {
-    //             title: character.name,
-    //             subtitle: `${character.school} | ${character.damageType}`,
-    //             imageUri: character.image,
-    //             buttons: [
-    //               {
-    //                 text: "ดูรูปภาพเพิ่มเติม",
-    //                 postback: character.photoUrl
-    //               }
-    //             ]
-    //           }
-    //         }
-    //       ]
-    //     });
-    //   } else {
-    //     return res.json({
-    //       fulfillmentText: `ขออภัย ไม่พบข้อมูลของตัวละคร ${characterName}`
-    //     });
-    //   }
 
     case 'GetRandomCharacterBAIntent': // Intent สำหรับเรียกฟังก์ชัน randomCharacterBA
       randomCharacterBA({
