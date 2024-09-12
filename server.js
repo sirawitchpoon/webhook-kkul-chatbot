@@ -7,6 +7,13 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
+// ใช้ environment variable สำหรับ API key
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+
+if (!ANTHROPIC_API_KEY) {
+  console.error('ANTHROPIC_API_KEY is not set in environment variables');
+  process.exit(1);
+}
 
 async function callLLMModel(agent, userQuery) {
   try {
