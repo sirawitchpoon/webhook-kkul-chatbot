@@ -7,8 +7,6 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// เพิ่ม Anthropic API key (ควรใช้ environment variable ในการผลิตจริง)
-// const ANTHROPIC_API_KEY = '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';
 
 async function callLLMModel(agent, userQuery) {
   try {
