@@ -1,36 +1,32 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const axios = require('axios'); // เพิ่ม axios
+const axios = require('axios');
 
 const app = express();
 app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// ฟังก์ชันสำหรับสุ่มตัวละครจาก API พร้อมการตั้งค่า timeout
 function randomCharacterBA(agent) {
-    return axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 }) // ตั้งค่า timeout 3 วินาที
+    return axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 })
     .then((response) => {
       const characters = response.data.data;
       const randomChar = characters[Math.floor(Math.random() * characters.length)];
       
-      agent.add(`นักเรียนที่น่ารักในวันนี้ของคุณคือ: ${randomChar.name} จากโรงเรียน ${randomChar.school} วันเกิดคือ ${randomChar.birthday}`);
+      return `นักเรียนที่น่ารักในวันนี้ของคุณคือ: ${randomChar.name} จากโรงเรียน ${randomChar.school} วันเกิดคือ ${randomChar.birthday}`;
     })
     .catch((error) => {
       console.error('Error:', error);
-      agent.add(`เกิดข้อผิดพลาด: ${error.message}`);
+      return `เกิดข้อผิดพลาด: ${error.message}`;
     });
 }
 
-function callLLMModel(agent, userQuery) {
+function callLLMModel(userQuery) {
   const API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B';
-  const token = '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'; // แทนที่ด้วย token ของคุณ
+  const token = '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';
   const headers = {
     'Authorization': `Bearer ${token}`
   };
-
-  // ทวนคำถามของผู้ใช้
-  agent.add(`คำถามของคุณคือ: "${userQuery}" ใช่หรือไม่? ฉันกำลังค้นหาคำตอบให้คุณ`);
 
   const data = {
       inputs: `<human>: ${userQuery}\n<bot>:`
@@ -43,59 +39,64 @@ function callLLMModel(agent, userQuery) {
           if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
               throw new Error('Unexpected response format from Hugging Face API');
           }
-          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1]?.trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ในขณะนี้";
+          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1]?.trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ใ นขณะนี้";
           console.log('Model reply:', modelReply);
-          agent.add(modelReply);
+          return `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${modelReply}`;
       })
       .catch((error) => {
           console.error('Error details:', error.response?.data || error.message);
-          agent.add(`เกิดข้อผิดพลาด: ${error.message}`);
+          return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
       });
 }
 
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
+  const userQuery = req.body.queryResult.parameters.userQuery;
 
-  switch(intent) {
-    case 'Default Welcome Intent':
-      return res.json({
-        fulfillmentText: 'Welcome to my agent!'
-      });
+  let fulfillmentText = '';
 
-    case 'Default Fallback Intent':
-      return res.json({
-        fulfillmentText: "I didn't understand. I'm sorry, can you try again?"
-      });
+  try {
+    switch(intent) {
+      case 'Default Welcome Intent':
+        fulfillmentText = 'ยินดีต้อนรับสู่แชทบอทของเรา! คุณสามารถถามคำถามได้เลยค่ะ';
+        break;
 
-    case 'AskLLMIntent': // Intent หลักที่ผู้ใช้จะพิมพ์ "LLM" ก่อน
-      return res.json({
-        fulfillmentText: 'คุณต้องการถามอะไรกับ LLM กรุณาพิมพ์คำถามของคุณ'
-      });
+      case 'Default Fallback Intent':
+        fulfillmentText = "ขออภัยค่ะ ฉันไม่เข้าใจคำถามของคุณ กรุณาถามใหม่อีกครั้งนะคะ";
+        break;
 
-    case 'AskLLMIntent - custom': // Follow-up Intent ที่จะรับคำถามจากผู้ใช้
-      callLLMModel({
-        add: (message) => {
-          console.log('Response to user:', message);
-          res.json({
-            fulfillmentText: message
-          });
+      case 'AskLLMIntent':
+        fulfillmentText = 'คุณต้องการถามอะไรกับ LLM กรุณาพิมพ์คำถามของคุณ';
+        break;
+
+      case 'AskLLMIntent - custom':
+        if (!userQuery) {
+          fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
+        } else {
+          fulfillmentText = await callLLMModel(userQuery);
         }
-      }, userQuery); // ใช้ข้อความที่ผู้ใช้ถาม
-      break;
+        break;
 
-    case 'GetRandomCharacterBAIntent': // Intent สำหรับเรียกฟังก์ชัน randomCharacterBA
-      randomCharacterBA({
-        add: (message) => res.json({
-          fulfillmentText: message
-        })
-      });
-      break;
+      case 'GetRandomCharacterBAIntent':
+        fulfillmentText = await randomCharacterBA();
+        break;
 
-    default:
-      return res.json({
-        fulfillmentText: 'ขออภัย ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้ง'
-      });
+      default:
+        fulfillmentText = 'ขออภัยค่ะ ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้งนะคะ';
+    }
+  } catch (error) {
+    console.error('Error in webhook:', error);
+    fulfillmentText = 'ขออภัยค่ะ เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้งในภายหลังนะคะ';
   }
+
+  res.json({ fulfillmentText });
+});
+
+app.use((error, req, res, next) => {
+  console.error('Unhandled error:', error);
+  res.status(500).json({
+    fulfillmentText: 'ขออภัยค่ะ เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้งในภายหลังนะคะ'
+  });
 });
 
 app.listen(PORT, () => {
