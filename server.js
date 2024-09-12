@@ -23,33 +23,63 @@ async function randomCharacterBA() {
   }
 }
 
-function callLLMModel(userQuery) {
-  const API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B';
+async function callLLMModel(userQuery) {
+  const SPACE_URL = 'https://huggingface.co/spaces/Sirawitch/kkulchatbot';  // Replace with your actual Space URL
   const token = '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';
   const headers = {
     'Authorization': `Bearer ${token}`
   };
 
+  
   const data = {
-      inputs: `<human>: ${userQuery}\n<bot>:`
+    data: [userQuery]
   };
 
   console.log('Calling LLM with query:', userQuery);
 
-  return axios.post(API_URL, data, { headers })
-      .then((response) => {
-          if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-              throw new Error('Unexpected response format from Hugging Face API');
-          }
-          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1]?.trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ใ นขณะนี้";
-          console.log('Model reply:', modelReply);
-          return `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${modelReply}`;
-      })
-      .catch((error) => {
-          console.error('Error details:', error.response?.data || error.message);
-          return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
-      });
+  try {
+    const response = await axios.post(SPACE_URL, data);
+    
+    if (!response.data || !response.data.data || response.data.data.length === 0) {
+      throw new Error('Unexpected response format from Hugging Face Space');
+    }
+    
+    const modelReply = response.data.data[0];
+    console.log('Model reply:', modelReply);
+    return `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${modelReply}`;
+  } catch (error) {
+    console.error('Error details:', error.response?.data || error.message);
+    return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
+  }
 }
+
+// function callLLMModel(userQuery) {
+//   const API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B';
+//   const token = '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';
+//   const headers = {
+//     'Authorization': `Bearer ${token}`
+//   };
+
+//   const data = {
+//       inputs: `<human>: ${userQuery}\n<bot>:`
+//   };
+
+//   console.log('Calling LLM with query:', userQuery);
+
+//   return axios.post(API_URL, data, { headers })
+//       .then((response) => {
+//           if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+//               throw new Error('Unexpected response format from Hugging Face API');
+//           }
+//           const modelReply = response.data[0]?.generated_text.split('<bot>:')[1]?.trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ใ นขณะนี้";
+//           console.log('Model reply:', modelReply);
+//           return `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${modelReply}`;
+//       })
+//       .catch((error) => {
+//           console.error('Error details:', error.response?.data || error.message);
+//           return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
+//       });
+// }
 
 app.post('/webhook', async (req, res) => {
   const intent = req.body.queryResult.intent.displayName;

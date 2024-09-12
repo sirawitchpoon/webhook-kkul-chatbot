@@ -1,37 +1,27 @@
 const axios = require('axios');
 
 const testHuggingFaceAPI = async () => {
-  const API_URL = 'https://api-inference.huggingface.co/models/sambanovasystems/SambaLingo-Thai-Chat';
-  const token = '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'; // แทนที่ด้วย token ของคุณ
-  const headers = {
-    'Authorization': `Bearer ${token}`
+  const SPACE_URL = 'https://huggingface.co/spaces/Sirawitch/kkulchatbot';  // Replace with your actual Space URL
+  
+  const data = {
+    data: [userQuery]
   };
 
+  console.log('Calling LLM with query:', userQuery);
+
   try {
-    console.log('Sending request to Hugging Face API...');
-    console.log('API URL:', API_URL);
-    console.log('Headers:', JSON.stringify(headers, null, 2));
-
-    const response = await axios.post(API_URL, {
-      inputs: '<human>: นายกไทยปัจจุบันคือคนที่เท่าไหร่แล้วคือใคร\n<bot>:'
-    }, { headers });
-
-    console.log('Hugging Face API response:', response.data);
-  } catch (error) {
-    console.error('Error occurred:');
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-      console.error('Response headers:', error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response received:', error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Error message:', error.message);
+    const response = await axios.post(SPACE_URL, data);
+    
+    if (!response.data || !response.data.data || response.data.data.length === 0) {
+      throw new Error('Unexpected response format from Hugging Face Space');
     }
+    
+    const modelReply = response.data.data[0];
+    console.log('Model reply:', modelReply);
+    return `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${modelReply}`;
+  } catch (error) {
+    console.error('Error details:', error.response?.data || error.message);
+    return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
   }
 };
 
