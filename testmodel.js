@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const testHuggingFaceAPI = async () => {
-  const API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B';
+  const API_URL = 'https://api-inference.huggingface.co/models/sambanovasystems/SambaLingo-Thai-Chat';
   const token = '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'; // แทนที่ด้วย token ของคุณ
   const headers = {
     'Authorization': `Bearer ${token}`
@@ -13,7 +13,7 @@ const testHuggingFaceAPI = async () => {
     console.log('Headers:', JSON.stringify(headers, null, 2));
 
     const response = await axios.post(API_URL, {
-      inputs: '<human>: สวัสดี\n<bot>:'
+      inputs: '<human>: นายกไทยปัจจุบันคือคนที่เท่าไหร่แล้วคือใคร\n<bot>:'
     }, { headers });
 
     console.log('Hugging Face API response:', response.data);
