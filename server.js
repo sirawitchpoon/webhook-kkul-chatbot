@@ -18,7 +18,7 @@ function randomCharacterBA(agent) {
     })
     .catch((error) => {
       console.error('Error:', error);
-      agent.add('ขออภัย ฉันไม่สามารถสุ่มตัวละครได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง');
+      agent.add(`เกิดข้อผิดพลาด: ${error.message}`);
     });
 }
 
@@ -46,7 +46,7 @@ function callLLMModel(agent, userQuery) {
       })
       .catch((error) => {
           console.error('Error details:', error.response?.data || error.message);
-          agent.add('ขออภัย เกิดข้อผิดพลาดในการเรียกใช้โมเดล กรุณาลองใหม่อีกครั้ง');
+          agent.add(`เกิดข้อผิดพลาด: ${error.message}`);
       });
 }
 
