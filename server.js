@@ -69,13 +69,18 @@ app.post('/webhook', async (req, res) => {
         fulfillmentText = 'คุณต้องการถามอะไรกับ LLM กรุณาพิมพ์คำถามของคุณ';
         break;
 
-      case 'AskLLMIntent - custom':
-        if (!userQuery) {
-          fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
-        } else {
-          fulfillmentText = await callLLMModel(userQuery);
-        }
-        break;
+        case 'AskLLMIntent - custom':
+          if (!userQuery) {
+            fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
+          } else {
+            fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nกำลังค้นหาคำตอบ...`;
+            res.json({ fulfillmentText });  // ส่งการตอบกลับแรก
+        
+            const llmResponse = await callLLMModel(userQuery);
+            fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;
+            return res.json({ fulfillmentText });  // ส่งการตอบกลับที่สอง
+          }
+          break;
 
       case 'GetRandomCharacterBAIntent':
         fulfillmentText = await randomCharacterBA();
