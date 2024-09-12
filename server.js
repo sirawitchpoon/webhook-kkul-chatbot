@@ -7,18 +7,20 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-function randomCharacterBA(agent) {
-    return axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 })
-    .then((response) => {
-      const characters = response.data.data;
-      const randomChar = characters[Math.floor(Math.random() * characters.length)];
-      
-      return `นักเรียนที่น่ารักในวันนี้ของคุณคือ: ${randomChar.name} จากโรงเรียน ${randomChar.school} วันเกิดคือ ${randomChar.birthday}`;
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-      return `เกิดข้อผิดพลาด: ${error.message}`;
-    });
+async function randomCharacterBA() {
+  try {
+    const response = await axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 });
+    const characters = response.data.data;
+    const randomChar = characters[Math.floor(Math.random() * characters.length)];
+    
+    const text = `นักเรียนที่น่ารักในวันนี้ของคุณคือ: ${randomChar.name} จากโรงเรียน ${randomChar.school} วันเกิดคือ ${randomChar.birthday}`;
+    const imageUrl = randomChar.image; // Assuming the API returns an image URL
+
+    return { text, imageUrl };
+  } catch (error) {
+    console.error('Error:', error);
+    return { text: `เกิดข้อผิดพลาด: ${error.message}`, imageUrl: null };
+  }
 }
 
 function callLLMModel(userQuery) {
@@ -79,9 +81,25 @@ app.post('/webhook', async (req, res) => {
           }
           break;
 
-      case 'GetRandomCharacterBAIntent':
-        fulfillmentText = await randomCharacterBA();
-        break;
+          case 'GetRandomCharacterBAIntent':
+            const { text, imageUrl } = await randomCharacterBA();
+            fulfillmentText = text;
+            if (imageUrl) {
+              fulfillmentMessages = [
+                {
+                  text: {
+                    text: [fulfillmentText]
+                  }
+                },
+                {
+                  image: {
+                    imageUri: imageUrl,
+                    accessibilityText: "Blue Archive Character Image"
+                  }
+                }
+              ];
+            }
+            break;
 
       default:
         fulfillmentText = 'ขออภัยค่ะ ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้งนะคะ';
