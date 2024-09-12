@@ -29,6 +29,9 @@ function callLLMModel(agent, userQuery) {
     'Authorization': `Bearer ${token}`
   };
 
+  // ทวนคำถามของผู้ใช้
+  agent.add(`คำถามของคุณคือ: "${userQuery}" ใช่หรือไม่? ฉันกำลังค้นหาคำตอบให้คุณ`);
+
   const data = {
       inputs: `<human>: ${userQuery}\n<bot>:`
   };
