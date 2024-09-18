@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const testHuggingFaceAPI = async () => {
-  const API_URL = 'https://api-inference.huggingface.co/models/scb10x/llama-3-typhoon-v1.5-8b';
+  const API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B';
   const token = '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'; // แทนที่ด้วย token ของคุณ
   const headers = {
     'Authorization': `Bearer ${token}`

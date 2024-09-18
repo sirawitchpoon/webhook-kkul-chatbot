@@ -71,35 +71,34 @@ app.post('/webhook', async (req, res) => {
         fulfillmentText = 'คุณต้องการถามอะไรกับ LLM กรุณาพิมพ์คำถามของคุณ';
         break;
 
-        case 'AskLLMIntent - custom':
-          if (!userQuery) {
-            fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
-          } else {
-            const llmResponse = await callLLMModel(userQuery);
-            fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;
-            return res.json({ fulfillmentText });  // ส่งการตอบกลับที่สอง
-          }
-          break;
+      case 'AskLLMIntent - custom':
+        if (!userQuery) {
+          fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
+        } else {
+          const llmResponse = await callLLMModel(userQuery);
+          fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;            return res.json({ fulfillmentText });  // ส่งการตอบกลับที่สอง
+        }
+        break;
 
-          case 'GetRandomCharacterBAIntent':
-            const { text, imageUrl } = await randomCharacterBA();
-            fulfillmentText = text;
-            if (imageUrl) {
-              fulfillmentMessages = [
-                {
-                  text: {
-                    text: [fulfillmentText]
-                  }
-                },
-                {
-                  image: {
-                    imageUri: imageUrl,
-                    accessibilityText: "Blue Archive Character Image"
-                  }
-                }
-              ];
+      case 'GetRandomCharacterBAIntent':
+        const { text, imageUrl } = await randomCharacterBA();
+        fulfillmentText = text;
+        if (imageUrl) {
+          fulfillmentMessages = [
+            {
+              text: {
+                text: [fulfillmentText]
+              }
+            },
+            {
+              image: {
+                imageUri: imageUrl,
+                  accessibilityText: "Blue Archive Character Image"
+              }
             }
-            break;
+          ];
+        }
+        break;  
 
       default:
         fulfillmentText = 'ขออภัยค่ะ ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้งนะคะ';
