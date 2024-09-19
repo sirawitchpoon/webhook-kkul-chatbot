@@ -27,11 +27,19 @@ async function callLLMModel(userQuery) {
   const HUGGINGFACE_SPACE_URL = 'https://sirawitch-kkulchatbot.hf.space/webhook';
   
   try {
+    console.log(`Sending request to ${HUGGINGFACE_SPACE_URL}`);
+    console.log(`Query: ${userQuery}`);
+
     const response = await axios.post(HUGGINGFACE_SPACE_URL, {
       queryResult: {
         queryText: userQuery
       }
+    }, {
+      timeout: 30000  // เพิ่ม timeout เป็น 30 วินาที
     });
+
+    console.log('Response status:', response.status);
+    console.log('Response data:', JSON.stringify(response.data, null, 2));
 
     if (response.data && response.data.fulfillmentText) {
       return response.data.fulfillmentText;
@@ -40,6 +48,14 @@ async function callLLMModel(userQuery) {
     }
   } catch (error) {
     console.error('Error calling Huggingface Space:', error);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error details:', error.message);
+    }
     return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
   }
 }
