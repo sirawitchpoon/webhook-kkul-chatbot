@@ -23,32 +23,25 @@ async function randomCharacterBA() {
   }
 }
 
-function callLLMModel(userQuery) {
-  const API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B';
-  const token = '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';
-  const headers = {
-    'Authorization': `Bearer ${token}`
-  };
+async function callLLMModel(userQuery) {
+  const HUGGINGFACE_SPACE_URL = 'https://sirawitch-kkulchatbot.hf.space/webhook';
+  
+  try {
+    const response = await axios.post(HUGGINGFACE_SPACE_URL, {
+      queryResult: {
+        queryText: userQuery
+      }
+    });
 
-  const data = {
-      inputs: `<human>: ${userQuery}\n<bot>:`
-  };
-
-  console.log('Calling LLM with query:', userQuery);
-
-  return axios.post(API_URL, data, { headers })
-      .then((response) => {
-          if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-              throw new Error('Unexpected response format from Hugging Face API');
-          }
-          const modelReply = response.data[0]?.generated_text.split('<bot>:')[1]?.trim() || "ขออภัย ฉันไม่สามารถให้คำตอบได้ใ นขณะนี้";
-          console.log('Model reply:', modelReply);
-          return `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${modelReply}`;
-      })
-      .catch((error) => {
-          console.error('Error details:', error.response?.data || error.message);
-          return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
-      });
+    if (response.data && response.data.fulfillmentText) {
+      return response.data.fulfillmentText;
+    } else {
+      throw new Error('Unexpected response format from Huggingface Space');
+    }
+  } catch (error) {
+    console.error('Error calling Huggingface Space:', error);
+    return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
+  }
 }
 
 app.post('/webhook', async (req, res) => {
@@ -76,7 +69,8 @@ app.post('/webhook', async (req, res) => {
           fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
         } else {
           const llmResponse = await callLLMModel(userQuery);
-          fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;            return res.json({ fulfillmentText });  // ส่งการตอบกลับที่สอง
+          fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;            
+          return res.json({ fulfillmentText });  // ส่งการตอบกลับที่สอง
         }
         break;
 
