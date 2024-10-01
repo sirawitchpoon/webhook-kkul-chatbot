@@ -1,10 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-
 const app = express();
 app.use(bodyParser.json());
-
 const PORT = process.env.PORT || 3000;
 
 async function randomCharacterBA() {
@@ -12,10 +10,9 @@ async function randomCharacterBA() {
     const response = await axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 });
     const characters = response.data.data;
     const randomChar = characters[Math.floor(Math.random() * characters.length)];
-    
+   
     const text = `นักเรียนที่น่ารักในวันนี้ของคุณคือ: ${randomChar.name} จากโรงเรียน ${randomChar.school} วันเกิดคือ ${randomChar.birthday}`;
-    const imageUrl = randomChar.image; // Assuming the API returns an image URL
-
+    const imageUrl = randomChar.image;
     return { text, imageUrl };
   } catch (error) {
     console.error('Error:', error);
@@ -24,72 +21,65 @@ async function randomCharacterBA() {
 }
 
 async function callLLMModel(userQuery) {
-  const HUGGINGFACE_SPACE_URL = 'https://sirawitch-kkulchatbot.hf.space/webhook';
-  
   try {
-    console.log(`Sending request to ${HUGGINGFACE_SPACE_URL}`);
-    console.log(`Query: ${userQuery}`);
+    const url = 'https://open-webui-no-ollama.onrender.com/api/chat/completions';
+    const headers = {
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjJjNGE5NDE1LThlNTAtNGNhNC04YTg2LWUzMGM5NWMwODM1YyJ9.IERv73N0kESgTVgQizFNDtNfa8cXjEgtBynzFGqGq2o',
+      'Content-Type': 'application/json'
+    };
+    const data = {
+      "stream": false,
+      "model": "llama-3.1-70b-versatile",
+      "messages": [
+        {"role": "user", "content": userQuery}
+      ],
+      "files": [
+        {
+          "collection_name": "a11b284eef287b759349eef1d7c46f5a549e3e8be760bcf69df2821864d35ee",
+          "name": "faq-kkultxt",
+          "title": "FAQ KKUL.txt",
+          "filename": "FAQ KKUL.txt",
+          "content": {},
+          "user_id": "9a936c99-7441-429f-b425-54a5d77fb50b",
+          "timestamp": 1724943802,
+          "selected": "unchecked"
+        }
+      ]
+    };
 
-    const response = await axios.post(HUGGINGFACE_SPACE_URL, {
-      queryResult: {
-        queryText: userQuery
-      }
-    }, {
-      timeout: 30000  // เพิ่ม timeout เป็น 30 วินาที
-    });
-
-    console.log('Response status:', response.status);
-    console.log('Response data:', JSON.stringify(response.data, null, 2));
-
-    if (response.data && response.data.fulfillmentText) {
-      return response.data.fulfillmentText;
-    } else {
-      throw new Error('Unexpected response format from Huggingface Space');
-    }
+    const response = await axios.post(url, data, { headers });
+    return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('Error calling Huggingface Space:', error);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
-      console.error('Error status:', error.response.status);
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    } else {
-      console.error('Error details:', error.message);
-    }
-    return `เกิดข้อผิดพลาดในการเรียกใช้ LLM: ${error.message}`;
+    console.error('Error calling LLM:', error);
+    return 'ขออภัยค่ะ เกิดข้อผิดพลาดในการเรียกใช้ LLM กรุณาลองใหม่อีกครั้งในภายหลังนะคะ';
   }
 }
 
 app.post('/webhook', async (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
   const userQuery = req.body.queryResult.parameters.userQuery;
-
   let fulfillmentText = '';
+  let fulfillmentMessages = [];
 
   try {
     switch(intent) {
       case 'Default Welcome Intent':
         fulfillmentText = 'ยินดีต้อนรับสู่แชทบอทของเรา! คุณสามารถถามคำถามได้เลยค่ะ';
         break;
-
       case 'Default Fallback Intent':
         fulfillmentText = "ขออภัยค่ะ ฉันไม่เข้าใจคำถามของคุณ กรุณาถามใหม่อีกครั้งนะคะ";
         break;
-
       case 'AskLLMIntent':
         fulfillmentText = 'คุณต้องการถามอะไรกับ LLM กรุณาพิมพ์คำถามของคุณ';
         break;
-
       case 'AskLLMIntent - custom':
         if (!userQuery) {
           fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
         } else {
           const llmResponse = await callLLMModel(userQuery);
-          fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;            
-          return res.json({ fulfillmentText });  // ส่งการตอบกลับที่สอง
+          fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;
         }
         break;
-
       case 'GetRandomCharacterBAIntent':
         const { text, imageUrl } = await randomCharacterBA();
         fulfillmentText = text;
@@ -103,13 +93,12 @@ app.post('/webhook', async (req, res) => {
             {
               image: {
                 imageUri: imageUrl,
-                  accessibilityText: "Blue Archive Character Image"
+                accessibilityText: "Blue Archive Character Image"
               }
             }
           ];
         }
         break;  
-
       default:
         fulfillmentText = 'ขออภัยค่ะ ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้งนะคะ';
     }
@@ -118,7 +107,11 @@ app.post('/webhook', async (req, res) => {
     fulfillmentText = 'ขออภัยค่ะ เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้งในภายหลังนะคะ';
   }
 
-  res.json({ fulfillmentText });
+  if (fulfillmentMessages.length > 0) {
+    res.json({ fulfillmentMessages });
+  } else {
+    res.json({ fulfillmentText });
+  }
 });
 
 app.use((error, req, res, next) => {
