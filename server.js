@@ -22,35 +22,22 @@ async function randomCharacterBA() {
 
 async function callLLMModel(userQuery) {
   try {
-    const url = 'https://open-webui-no-ollama.onrender.com/api/chat/completions';
+    const url = 'https://open-webui-no-ollama.onrender.com/api/chat/completions'; // หรือ URL ของ OpenWebUI ของคุณ
     const headers = {
-      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcxNGUzZmIzLTZmZGItNDZhOC05MTA3LTkzMjA2ZDliYmI2YyJ9.zlQ6ZCzjEbLdoXoewg-6wzFI8daMpOTVYP049frzBkA',
+      'Authorization': `Bearer ${process.env.OPENWEBUI_API_KEY}`,
       'Content-Type': 'application/json'
     };
     const data = {
-      "stream": false,
-      "model": "llama-3.1-70b-versatile",
-      "messages": [
-        {"role": "user", "content": userQuery}
-      ],
-      "files": [
-        {
-          "collection_name": "a11b284eef287b759349eef1d7c46f5a549e3e8be760bcf69df2821864d35ee",
-          "name": "faq-kkultxt",
-          "title": "FAQ KKUL.txt",
-          "filename": "FAQ KKUL.txt",
-          "content": {},
-          "user_id": "9a936c99-7441-429f-b425-54a5d77fb50b",
-          "timestamp": 1724943802,
-          "selected": "unchecked"
-        }
+      model: "llama-3.1-70b-versatile", // หรือชื่อโมเดลที่คุณต้องการใช้
+      messages: [
+        { role: "user", content: userQuery }
       ]
     };
 
     const response = await axios.post(url, data, { headers });
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('Error calling LLM:', error);
+    console.error('Error calling OpenWebUI LLM:', error);
     return 'ขออภัยค่ะ เกิดข้อผิดพลาดในการเรียกใช้ LLM กรุณาลองใหม่อีกครั้งในภายหลังนะคะ';
   }
 }
