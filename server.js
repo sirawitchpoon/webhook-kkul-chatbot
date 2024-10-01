@@ -67,6 +67,9 @@ app.post('/webhook', async (req, res) => {
         fulfillmentText = 'ยินดีต้อนรับสู่แชทบอทของเรา! คุณสามารถถามคำถามได้เลยค่ะ';
         break;
       case 'Default Fallback Intent':
+        fulfillmentText = "ขออภัยค่ะ ฉันไม่เข้าใจคำถามของคุณ กรุณาถามใหม่อีกครั้งนะคะ";
+        break;
+      case 'LLM':
         const llmResponse = await callLLMModel(userQuery);
         fulfillmentText = `จากคำถามว่า: "${userQuery}"\n\nได้คำตอบ: ${llmResponse}`;
         break;
