@@ -24,7 +24,7 @@ async function callLLMModel(userQuery) {
   try {
     const url = 'https://open-webui-no-ollama.onrender.com/api/chat/completions';
     const headers = {
-      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjJjNGE5NDE1LThlNTAtNGNhNC04YTg2LWUzMGM5NWMwODM1YyJ9.IERv73N0kESgTVgQizFNDtNfa8cXjEgtBynzFGqGq2o',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcxNGUzZmIzLTZmZGItNDZhOC05MTA3LTkzMjA2ZDliYmI2YyJ9.zlQ6ZCzjEbLdoXoewg-6wzFI8daMpOTVYP049frzBkA',
       'Content-Type': 'application/json'
     };
     const data = {
@@ -67,18 +67,8 @@ app.post('/webhook', async (req, res) => {
         fulfillmentText = 'ยินดีต้อนรับสู่แชทบอทของเรา! คุณสามารถถามคำถามได้เลยค่ะ';
         break;
       case 'Default Fallback Intent':
-        fulfillmentText = "ขออภัยค่ะ ฉันไม่เข้าใจคำถามของคุณ กรุณาถามใหม่อีกครั้งนะคะ";
-        break;
-      case 'AskLLMIntent':
-        fulfillmentText = 'คุณต้องการถามอะไรกับ LLM กรุณาพิมพ์คำถามของคุณ';
-        break;
-      case 'AskLLMIntent - custom':
-        if (!userQuery) {
-          fulfillmentText = 'ขออภัยค่ะ ไม่พบคำถามของคุณ กรุณาถามคำถามอีกครั้งนะคะ';
-        } else {
-          const llmResponse = await callLLMModel(userQuery);
-          fulfillmentText = `คำถามของคุณคือ: "${userQuery}"\n\nคำตอบ: ${llmResponse}`;
-        }
+        const llmResponse = await callLLMModel(userQuery);
+        fulfillmentText = `จากคำถามว่า: "${userQuery}"\n\nได้คำตอบ: ${llmResponse}`;
         break;
       case 'GetRandomCharacterBAIntent':
         const { text, imageUrl } = await randomCharacterBA();
