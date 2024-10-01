@@ -24,7 +24,7 @@ async function callLLMModel(userQuery) {
   try {
     const url = 'https://open-webui-no-ollama.onrender.com/api/chat/completions'; // หรือ URL ของ OpenWebUI ของคุณ
     const headers = {
-      'Authorization': `Bearer ${process.env.OPENWEBUI_API_KEY}`,
+      'Authorization': `Bearer ${process.env.AUTH_TOKEN}`,
       'Content-Type': 'application/json'
     };
     const data = {
