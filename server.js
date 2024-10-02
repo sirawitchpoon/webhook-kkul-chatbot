@@ -23,8 +23,7 @@ async function callLLMModel(userQuery) {
   try {
     const url = process.env.LLM_CHAT_API_URL;
     const headers = {
-      // 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ4MTQ1OTgwLTM4ZjgtNGI4Yi1iMzIxLTI3ODI4NjhkOGNiZSJ9.mUK8Nl6g1WD-Sfexp3cczZJEC3k-mPHpVQyQeBJzaPQ',
-      'Authorization': 'Bearer ${process.env.AUTH_TOKEN}',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ4MTQ1OTgwLTM4ZjgtNGI4Yi1iMzIxLTI3ODI4NjhkOGNiZSJ9.mUK8Nl6g1WD-Sfexp3cczZJEC3k-mPHpVQyQeBJzaPQ',
 
       'Content-Type': 'application/json'
     };
@@ -35,7 +34,6 @@ async function callLLMModel(userQuery) {
         { role: "user", content: userQuery }
       ]
     };
-    console.log(headers)
     const response = await axios.post(url, data, { headers });
     return response.data.choices[0].message.content;
   } catch (error) {
