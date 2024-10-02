@@ -22,22 +22,23 @@ async function randomCharacterBA() {
 
 async function callLLMModel(userQuery) {
   try {
-    const url = 'https://open-webui-no-ollama.onrender.com/api/chat/completions'; // หรือ URL ของ OpenWebUI ของคุณ
+    const url = 'https://api.float16.cloud/dedicate/78y8fJLuzE/v1/chat/completions';
     const headers = {
-      'Authorization': `Bearer ${process.env.AUTH_TOKEN}`,
+      'Authorization': 'Bearer float16-AG0F8yNce5s1DiXm1ujcNrTaZquEdaikLwhZBRhyZQNeS7Dv0X',
       'Content-Type': 'application/json'
     };
     const data = {
-      model: "llama-3.1-70b-versatile", // หรือชื่อโมเดลที่คุณต้องการใช้
+      model: "openthaigpt/openthaigpt1.5-7b-instruct",
       messages: [
+        { role: "system", content: "คุณคือผู้ช่วยตอบคำถามที่ฉลาดและซื่อสัตย์" },
         { role: "user", content: userQuery }
       ]
     };
-
+    
     const response = await axios.post(url, data, { headers });
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('Error calling OpenWebUI LLM:', error);
+    console.error('Error calling Float16 LLM:', error);
     return 'ขออภัยค่ะ เกิดข้อผิดพลาดในการเรียกใช้ LLM กรุณาลองใหม่อีกครั้งในภายหลังนะคะ';
   }
 }
