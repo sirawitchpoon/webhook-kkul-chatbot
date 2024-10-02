@@ -7,24 +7,24 @@ const PORT = process.env.PORT || 3000;
 
 async function randomCharacterBA() {
   try {
-    const response = await axios.get('https://api-blue-archive.vercel.app/api/characters', { timeout: 3000 });
+    const response = await axios.get(process.env.BA_API_URL, { timeout: 3000 });
     const characters = response.data.data;
     const randomChar = characters[Math.floor(Math.random() * characters.length)];
    
     const text = `นักเรียนที่น่ารักในวันนี้ของคุณคือ: ${randomChar.name} จากโรงเรียน ${randomChar.school} วันเกิดคือ ${randomChar.birthday}`;
-    const imageUrl = randomChar.image;
-    return { text, imageUrl };
+    return { text };
   } catch (error) {
     console.error('Error:', error);
-    return { text: `เกิดข้อผิดพลาด: ${error.message}`, imageUrl: null };
+    return { text: `เกิดข้อผิดพลาด: ${error.message}` };
   }
 }
 
 async function callLLMModel(userQuery) {
   try {
-    const url = 'https://api.float16.cloud/dedicate/78y8fJLuzE/v1/chat/completions';
+    const url = process.env.OTG_API_URL;
+    const AUTH = process.env.AUTH_TOKEN
     const headers = {
-      'Authorization': 'Bearer float16-AG0F8yNce5s1DiXm1ujcNrTaZquEdaikLwhZBRhyZQNeS7Dv0X',
+      'Authorization': 'Bearer ${AUTH}',
       'Content-Type': 'application/json'
     };
     const data = {
@@ -57,28 +57,13 @@ app.post('/webhook', async (req, res) => {
       case 'Default Fallback Intent':
         fulfillmentText = "ขออภัยค่ะ ฉันไม่เข้าใจคำถามของคุณ กรุณาถามใหม่อีกครั้งนะคะ";
         break;
-      case 'callLLM-custom':
+      case 'callLLM':
         const llmResponse = await callLLMModel(userQuery);
         fulfillmentText = `จากคำถามว่า: "${userQuery}"\n\nได้คำตอบ: ${llmResponse}`;
         break;
       case 'GetRandomCharacterBAIntent':
-        const { text, imageUrl } = await randomCharacterBA();
+        const { text } = await randomCharacterBA();
         fulfillmentText = text;
-        if (imageUrl) {
-          fulfillmentMessages = [
-            {
-              text: {
-                text: [fulfillmentText]
-              }
-            },
-            {
-              image: {
-                imageUri: imageUrl,
-                accessibilityText: "Blue Archive Character Image"
-              }
-            }
-          ];
-        }
         break;  
       default:
         fulfillmentText = 'ขออภัยค่ะ ไม่เข้าใจคำขอ กรุณาลองใหม่อีกครั้งนะคะ';
