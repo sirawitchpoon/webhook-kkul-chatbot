@@ -23,7 +23,8 @@ async function callLLMModel(userQuery) {
   try {
     const url = process.env.LLM_CHAT_API_URL;
     const headers = {
-      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxNTVkY2U5LThjY2MtNGE0Ni1iMDk1LWExZTAwYzdjM2I1ZCJ9.MXKjjsIYs1QascsYf6y2fRyigOPx62DDqxGBrviCOeE',
+      'Authorization': 'Bearer ${process.env.AUTH_TOKEN}',
+
       'Content-Type': 'application/json'
     };
     const data = {
