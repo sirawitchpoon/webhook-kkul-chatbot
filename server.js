@@ -22,13 +22,12 @@ async function randomCharacterBA() {
 async function callLLMModel(userQuery) {
   try {
     const url = process.env.OTG_API_URL;
-    const AUTH = process.env.AUTH_TOKEN
     const headers = {
-      'Authorization': 'Bearer ${AUTH}',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxNTVkY2U5LThjY2MtNGE0Ni1iMDk1LWExZTAwYzdjM2I1ZCJ9.MXKjjsIYs1QascsYf6y2fRyigOPx62DDqxGBrviCOeE',
       'Content-Type': 'application/json'
     };
     const data = {
-      model: "openthaigpt/openthaigpt1.5-7b-instruct",
+      model: "llama-3.1-70b-versatile",
       messages: [
         { role: "system", content: "คุณคือผู้ช่วยตอบคำถามที่ฉลาดและซื่อสัตย์" },
         { role: "user", content: userQuery }
