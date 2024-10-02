@@ -21,7 +21,7 @@ async function randomCharacterBA() {
 
 async function callLLMModel(userQuery) {
   try {
-    const url = process.env.OTG_API_URL;
+    const url = process.env.LLM_CHAT_API_URL;
     const headers = {
       'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxNTVkY2U5LThjY2MtNGE0Ni1iMDk1LWExZTAwYzdjM2I1ZCJ9.MXKjjsIYs1QascsYf6y2fRyigOPx62DDqxGBrviCOeE',
       'Content-Type': 'application/json'
